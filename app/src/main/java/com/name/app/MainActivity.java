@@ -1,6 +1,8 @@
 package com.example.ussdwebview;
 
+
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -15,13 +17,16 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
 
 
 public class MainActivity extends AppCompatActivity {
@@ -32,18 +37,28 @@ public class MainActivity extends AppCompatActivity {
     private static final int SMS_PERMISSION = 200;
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
 
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
 
 
+
+        // keep app alive in foreground
+        startKeepAliveService();
+
+
+
         setupSystemTheme();
 
 
+
         webView = findViewById(R.id.webview);
+
 
 
         WebSettings settings =
@@ -59,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
 
             WebView.setWebContentsDebuggingEnabled(true);
 
@@ -75,15 +90,17 @@ public class MainActivity extends AppCompatActivity {
 
 
         webView.setWebViewClient(
-                new WebViewClient() {
+                new WebViewClient(){
+
 
                     @Override
                     public void onPageFinished(
                             WebView view,
                             String url
-                    ) {
+                    ){
 
                         super.onPageFinished(view,url);
+
 
 
                         boolean dark =
@@ -96,8 +113,10 @@ public class MainActivity extends AppCompatActivity {
                                 Configuration.UI_MODE_NIGHT_YES;
 
 
+
                         String theme =
                                 dark ? "dark" : "light";
+
 
 
                         view.evaluateJavascript(
@@ -108,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
                         );
 
                     }
+
                 }
         );
 
@@ -116,11 +136,43 @@ public class MainActivity extends AppCompatActivity {
         requestSmsPermission();
 
 
+
         webView.loadUrl(
                 "file:///android_asset/index.html"
         );
 
     }
+
+
+
+
+
+
+    // ===========================
+    // FOREGROUND KEEP ALIVE
+    // ===========================
+
+
+    private void startKeepAliveService(){
+
+
+        Intent intent =
+                new Intent(
+                        this,
+                        KeepAliveService.class
+                );
+
+
+        ContextCompat.startForegroundService(
+                this,
+                intent
+        );
+
+    }
+
+
+
+
 
 
 
@@ -136,11 +188,14 @@ public class MainActivity extends AppCompatActivity {
         != PackageManager.PERMISSION_GRANTED){
 
 
+
             ActivityCompat.requestPermissions(
                     this,
                     new String[]{
+
                             Manifest.permission.READ_SMS,
                             Manifest.permission.RECEIVE_SMS
+
                     },
                     SMS_PERMISSION
             );
@@ -154,24 +209,31 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
+
     public class SmsBridge {
+
 
 
         @JavascriptInterface
         public String getAllSms(){
 
 
+
             JSONArray smsList =
                     new JSONArray();
 
 
-            try {
+
+            try{
 
 
                 Uri uri =
                         Uri.parse(
-                        "content://sms/"
+                                "content://sms/"
                         );
+
 
 
                 Cursor cursor =
@@ -206,7 +268,9 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
                     while(cursor.moveToNext()){
+
 
 
                         JSONObject sms =
@@ -220,16 +284,19 @@ public class MainActivity extends AppCompatActivity {
                         );
 
 
+
                         sms.put(
                                 "sender",
                                 cursor.getString(sender)
                         );
 
 
+
                         sms.put(
                                 "message",
                                 cursor.getString(body)
                         );
+
 
 
                         sms.put(
@@ -241,7 +308,9 @@ public class MainActivity extends AppCompatActivity {
 
                         smsList.put(sms);
 
+
                     }
+
 
 
                     cursor.close();
@@ -249,9 +318,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
 
-
-            }
-            catch(Exception e){
+            }catch(Exception e){
 
                 e.printStackTrace();
 
@@ -271,7 +338,12 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
+
+
     private void setupSystemTheme(){
+
 
 
         boolean darkMode =
@@ -285,13 +357,14 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
         Window window =
                 getWindow();
 
 
 
-        if(Build.VERSION.SDK_INT >=
-                Build.VERSION_CODES.LOLLIPOP){
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
 
 
 
@@ -320,6 +393,7 @@ public class MainActivity extends AppCompatActivity {
                         Color.WHITE
                 );
 
+
             }
 
         }
@@ -327,27 +401,36 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        if(Build.VERSION.SDK_INT >=
-                Build.VERSION_CODES.R){
+
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+
 
 
             if(window.getInsetsController()!=null){
 
 
+
                 if(!darkMode){
+
 
 
                     window.getInsetsController()
                     .setSystemBarsAppearance(
+
                             android.view.WindowInsetsController
-                            .APPEARANCE_LIGHT_STATUS_BARS |
+                            .APPEARANCE_LIGHT_STATUS_BARS
+                            |
                             android.view.WindowInsetsController
                             .APPEARANCE_LIGHT_NAVIGATION_BARS,
 
+
                             android.view.WindowInsetsController
-                            .APPEARANCE_LIGHT_STATUS_BARS |
+                            .APPEARANCE_LIGHT_STATUS_BARS
+                            |
                             android.view.WindowInsetsController
                             .APPEARANCE_LIGHT_NAVIGATION_BARS
+
                     );
 
                 }
@@ -356,7 +439,10 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+
     }
+
+
 
 
 
@@ -369,7 +455,9 @@ public class MainActivity extends AppCompatActivity {
             @NonNull Configuration config
     ){
 
+
         super.onConfigurationChanged(config);
+
 
         setupSystemTheme();
 
@@ -381,8 +469,11 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
     @Override
     public void onBackPressed(){
+
 
 
         if(webView != null &&
@@ -400,5 +491,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
 
 }
