@@ -10,7 +10,6 @@ import android.net.Uri;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
 import android.view.Window;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
@@ -34,7 +33,10 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
 
+
     private static final int SMS_PERMISSION = 200;
+    private static final int NOTIFICATION_PERMISSION = 300;
+
 
 
 
@@ -44,12 +46,13 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
+
         setContentView(R.layout.activity_main);
 
 
 
-        // keep app alive in foreground
-        startKeepAliveService();
+        // start foreground service permission flow
+        requestNotificationPermission();
 
 
 
@@ -82,10 +85,12 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
         webView.addJavascriptInterface(
                 new SmsBridge(),
                 "AndroidSMS"
         );
+
 
 
 
@@ -120,9 +125,11 @@ public class MainActivity extends AppCompatActivity {
 
 
                         view.evaluateJavascript(
+
                                 "document.documentElement.setAttribute('data-theme','"
                                 + theme +
                                 "')",
+
                                 null
                         );
 
@@ -141,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
                 "file:///android_asset/index.html"
         );
 
+
     }
 
 
@@ -148,12 +156,68 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    // ===========================
-    // FOREGROUND KEEP ALIVE
-    // ===========================
+
+
+    private void requestNotificationPermission(){
+
+
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
+
+
+
+            if(ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+            )
+            != PackageManager.PERMISSION_GRANTED){
+
+
+
+                ActivityCompat.requestPermissions(
+
+                        this,
+
+                        new String[]{
+                                Manifest.permission.POST_NOTIFICATIONS
+                        },
+
+                        NOTIFICATION_PERMISSION
+                );
+
+
+
+            }else{
+
+
+                startKeepAliveService();
+
+
+            }
+
+
+
+        }else{
+
+
+            startKeepAliveService();
+
+
+        }
+
+
+    }
+
+
+
+
+
+
+
 
 
     private void startKeepAliveService(){
+
 
 
         Intent intent =
@@ -163,12 +227,24 @@ public class MainActivity extends AppCompatActivity {
                 );
 
 
-        ContextCompat.startForegroundService(
-                this,
-                intent
-        );
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+
+
+            startForegroundService(intent);
+
+
+        }else{
+
+
+            startService(intent);
+
+        }
+
 
     }
+
+
 
 
 
@@ -181,28 +257,38 @@ public class MainActivity extends AppCompatActivity {
     private void requestSmsPermission(){
 
 
+
         if(ContextCompat.checkSelfPermission(
+
                 this,
+
                 Manifest.permission.READ_SMS
+
         )
         != PackageManager.PERMISSION_GRANTED){
 
 
 
             ActivityCompat.requestPermissions(
+
                     this,
+
                     new String[]{
 
                             Manifest.permission.READ_SMS,
                             Manifest.permission.RECEIVE_SMS
 
                     },
+
                     SMS_PERMISSION
             );
+
 
         }
 
     }
+
+
 
 
 
@@ -226,7 +312,8 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-            try{
+            try {
+
 
 
                 Uri uri =
@@ -251,20 +338,21 @@ public class MainActivity extends AppCompatActivity {
                 if(cursor != null){
 
 
+
                     int id =
-                    cursor.getColumnIndex("_id");
+                            cursor.getColumnIndex("_id");
 
 
                     int sender =
-                    cursor.getColumnIndex("address");
+                            cursor.getColumnIndex("address");
 
 
                     int body =
-                    cursor.getColumnIndex("body");
+                            cursor.getColumnIndex("body");
 
 
                     int date =
-                    cursor.getColumnIndex("date");
+                            cursor.getColumnIndex("date");
 
 
 
@@ -284,19 +372,16 @@ public class MainActivity extends AppCompatActivity {
                         );
 
 
-
                         sms.put(
                                 "sender",
                                 cursor.getString(sender)
                         );
 
 
-
                         sms.put(
                                 "message",
                                 cursor.getString(body)
                         );
-
 
 
                         sms.put(
@@ -318,6 +403,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
 
+
             }catch(Exception e){
 
                 e.printStackTrace();
@@ -328,11 +414,11 @@ public class MainActivity extends AppCompatActivity {
 
             return smsList.toString();
 
+
         }
 
+
     }
-
-
 
 
 
@@ -354,7 +440,6 @@ public class MainActivity extends AppCompatActivity {
                 Configuration.UI_MODE_NIGHT_MASK)
                 ==
                 Configuration.UI_MODE_NIGHT_YES;
-
 
 
 
@@ -393,11 +478,9 @@ public class MainActivity extends AppCompatActivity {
                         Color.WHITE
                 );
 
-
             }
 
         }
-
 
 
 
@@ -406,41 +489,43 @@ public class MainActivity extends AppCompatActivity {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
 
 
-
             if(window.getInsetsController()!=null){
 
 
-
                 if(!darkMode){
-
 
 
                     window.getInsetsController()
                     .setSystemBarsAppearance(
 
                             android.view.WindowInsetsController
-                            .APPEARANCE_LIGHT_STATUS_BARS
-                            |
+                            .APPEARANCE_LIGHT_STATUS_BARS |
+
                             android.view.WindowInsetsController
                             .APPEARANCE_LIGHT_NAVIGATION_BARS,
 
 
                             android.view.WindowInsetsController
-                            .APPEARANCE_LIGHT_STATUS_BARS
-                            |
+                            .APPEARANCE_LIGHT_STATUS_BARS |
+
                             android.view.WindowInsetsController
                             .APPEARANCE_LIGHT_NAVIGATION_BARS
 
                     );
 
+
                 }
 
+
             }
+
 
         }
 
 
     }
+
+
 
 
 
@@ -455,13 +540,53 @@ public class MainActivity extends AppCompatActivity {
             @NonNull Configuration config
     ){
 
-
         super.onConfigurationChanged(config);
 
 
         setupSystemTheme();
 
     }
+
+
+
+
+
+
+
+
+
+    @Override
+    public void onRequestPermissionsResult(
+
+            int requestCode,
+
+            @NonNull String[] permissions,
+
+            @NonNull int[] grantResults
+
+    ){
+
+
+
+        super.onRequestPermissionsResult(
+                requestCode,
+                permissions,
+                grantResults
+        );
+
+
+
+        if(requestCode == NOTIFICATION_PERMISSION){
+
+
+            startKeepAliveService();
+
+
+        }
+
+
+    }
+
 
 
 
@@ -483,12 +608,14 @@ public class MainActivity extends AppCompatActivity {
             webView.goBack();
 
 
+
         }else{
 
 
             super.onBackPressed();
 
         }
+
 
     }
 

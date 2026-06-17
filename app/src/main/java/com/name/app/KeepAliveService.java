@@ -1,21 +1,27 @@
 package com.example.ussdwebview;
 
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
+
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 
+
 public class KeepAliveService extends Service {
 
 
+
     private static final String CHANNEL_ID = "Fiskon";
+
 
 
     @Override
@@ -23,16 +29,37 @@ public class KeepAliveService extends Service {
 
         super.onCreate();
 
+
         createNotificationChannel();
 
 
+
         Notification notification =
-                new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Fiskon Is Running")
-                .setContentText("App Monitoring Active")
-                .setSmallIcon(R.drawable.app_icon)
+                new NotificationCompat.Builder(
+                        this,
+                        CHANNEL_ID
+                )
+
+                .setContentTitle(
+                        "Fiskon Is Running"
+                )
+
+                .setContentText(
+                        "App Monitoring Active"
+                )
+
+                .setSmallIcon(
+                        R.drawable.app_icon
+                )
+
                 .setOngoing(true)
+
+                .setPriority(
+                        NotificationCompat.PRIORITY_LOW
+                )
+
                 .build();
+
 
 
         startForeground(
@@ -40,31 +67,65 @@ public class KeepAliveService extends Service {
                 notification
         );
 
+
     }
+
+
+
+
 
 
 
     private void createNotificationChannel(){
 
+
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+
+
 
             NotificationChannel channel =
                     new NotificationChannel(
+
                             CHANNEL_ID,
-                            "Fiskon",
+
+                            "Fiskon Background Service",
+
                             NotificationManager.IMPORTANCE_LOW
+
                     );
 
 
+
+            channel.setDescription(
+                    "Keeps Fiskon running"
+            );
+
+
+
             NotificationManager manager =
-                    getSystemService(NotificationManager.class);
+                    getSystemService(
+                            NotificationManager.class
+                    );
 
 
-            manager.createNotificationChannel(channel);
+
+            if(manager != null){
+
+                manager.createNotificationChannel(
+                        channel
+                );
+
+            }
 
         }
 
+
     }
+
+
+
+
+
 
 
 
@@ -75,8 +136,60 @@ public class KeepAliveService extends Service {
             int startId
     ){
 
+
         return START_STICKY;
+
     }
+
+
+
+
+
+
+
+
+
+    @Override
+    public void onDestroy(){
+
+
+        super.onDestroy();
+
+
+
+        // restart service if Android kills it
+
+        Intent restartService =
+                new Intent(
+                        getApplicationContext(),
+                        KeepAliveService.class
+                );
+
+
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+
+
+            startForegroundService(
+                    restartService
+            );
+
+
+        }else{
+
+
+            startService(
+                    restartService
+            );
+
+        }
+
+
+    }
+
+
+
+
 
 
 
@@ -85,6 +198,9 @@ public class KeepAliveService extends Service {
     public IBinder onBind(Intent intent){
 
         return null;
+
     }
+
+
 
 }
