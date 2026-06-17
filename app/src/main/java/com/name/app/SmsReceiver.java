@@ -21,22 +21,20 @@ public void onReceive(
 
 
 
-Bundle data =
+Bundle b =
         intent.getExtras();
 
 
 
-if(data != null){
-
+if(b != null){
 
 
 Object[] pdus =
-        (Object[]) data.get("pdus");
+        (Object[]) b.get("pdus");
 
 
 
 if(pdus != null){
-
 
 
 for(Object p : pdus){
@@ -50,28 +48,19 @@ SmsMessage.createFromPdu(
 
 
 
-String sender =
-        sms.getOriginatingAddress();
-
-
-
-String message =
-        sms.getMessageBody();
-
-
-
-
 android.util.Log.d(
 
-        "Fiskon SMS",
+        "Fiskon",
 
-        sender + " : " + message
+        sms.getOriginatingAddress()
+        +
+        ":"
+        +
+        sms.getMessageBody()
 
 );
 
 
-}
-
 
 }
 
@@ -80,5 +69,10 @@ android.util.Log.d(
 
 
 }
+
+
+
+}
+
 
 }

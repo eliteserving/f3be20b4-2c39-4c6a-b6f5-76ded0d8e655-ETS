@@ -1,10 +1,10 @@
 package com.example.ussdwebview;
 
 
-
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 
 import android.content.Intent;
@@ -15,8 +15,6 @@ import android.os.IBinder;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
-import android.app.PendingIntent;
-
 
 
 public class KeepAliveService extends Service {
@@ -25,7 +23,6 @@ public class KeepAliveService extends Service {
 
 private static final String CHANNEL_ID =
         "Fiskon";
-
 
 
 
@@ -49,59 +46,53 @@ Intent open =
         );
 
 
-
 open.setFlags(
+        Intent.FLAG_ACTIVITY_NEW_TASK |
         Intent.FLAG_ACTIVITY_CLEAR_TOP
 );
 
 
 
-PendingIntent pending =
-PendingIntent.getActivity(
+PendingIntent click =
+        PendingIntent.getActivity(
 
-        this,
-        0,
-        open,
+                this,
 
-        PendingIntent.FLAG_UPDATE_CURRENT |
-        PendingIntent.FLAG_IMMUTABLE
+                0,
 
-);
+                open,
+
+                PendingIntent.FLAG_UPDATE_CURRENT |
+                PendingIntent.FLAG_IMMUTABLE
+
+        );
 
 
 
 
 
 Notification notification =
-
-new NotificationCompat.Builder(
-        this,
-        CHANNEL_ID
-)
+        new NotificationCompat.Builder(
+                this,
+                CHANNEL_ID
+        )
 
 
 .setContentTitle(
         "Fiskon Running"
 )
 
-
 .setContentText(
         "SMS monitoring active"
 )
-
 
 .setSmallIcon(
         R.drawable.app_icon
 )
 
-
 .setOngoing(true)
 
-
-.setContentIntent(
-        pending
-)
-
+.setContentIntent(click)
 
 .build();
 
@@ -123,20 +114,19 @@ startForeground(
 
 
 
-
 private void createChannel(){
-
 
 
 if(Build.VERSION.SDK_INT >= 26){
 
 
-NotificationChannel channel =
+
+NotificationChannel c =
 new NotificationChannel(
 
 CHANNEL_ID,
 
-"Fiskon Service",
+"Fiskon",
 
 NotificationManager.IMPORTANCE_LOW
 
@@ -147,15 +137,13 @@ NotificationManager.IMPORTANCE_LOW
 getSystemService(
 NotificationManager.class
 )
-.createNotificationChannel(channel);
-
-
-
-}
+.createNotificationChannel(c);
 
 
 }
 
+
+}
 
 
 
@@ -171,9 +159,7 @@ public int onStartCommand(
         int id
 ){
 
-
 return START_STICKY;
-
 
 }
 
@@ -184,11 +170,10 @@ return START_STICKY;
 
 @Nullable
 @Override
-public IBinder onBind(Intent intent){
+public IBinder onBind(Intent i){
 
 return null;
 
 }
-
 
 }

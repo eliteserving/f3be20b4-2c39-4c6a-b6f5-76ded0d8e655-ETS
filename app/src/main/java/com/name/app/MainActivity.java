@@ -31,11 +31,11 @@ import androidx.core.content.ContextCompat;
 public class MainActivity extends AppCompatActivity {
 
 
-    private WebView webView;
+
+    WebView webView;
 
 
     private static final int SMS_PERMISSION = 200;
-
 
 
 
@@ -50,12 +50,11 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        startKeepAlive();
+        startServiceAlive();
 
 
 
         setupSystemTheme();
-
 
 
 
@@ -72,16 +71,12 @@ public class MainActivity extends AppCompatActivity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
 
 
 
         webView.addJavascriptInterface(
-
                 new SmsBridge(),
-
                 "AndroidSMS"
-
         );
 
 
@@ -100,7 +95,6 @@ public class MainActivity extends AppCompatActivity {
                 "file:///android_asset/index.html"
         );
 
-
     }
 
 
@@ -109,8 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-    private void startKeepAlive(){
+    private void startServiceAlive(){
 
 
         Intent i =
@@ -134,7 +127,6 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-
     }
 
 
@@ -155,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
         != PackageManager.PERMISSION_GRANTED){
 
 
+
             ActivityCompat.requestPermissions(
 
                     this,
@@ -167,11 +160,9 @@ public class MainActivity extends AppCompatActivity {
                     },
 
                     SMS_PERMISSION
-
             );
 
         }
-
 
     }
 
@@ -186,8 +177,10 @@ public class MainActivity extends AppCompatActivity {
     public class SmsBridge {
 
 
+
         @JavascriptInterface
         public String getAllSms(){
+
 
 
             JSONArray list =
@@ -195,32 +188,32 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-            try{
+            Cursor c =
+                    getContentResolver()
+                    .query(
 
+                            Uri.parse(
+                            "content://sms/"
+                            ),
 
-                Cursor c =
-                        getContentResolver()
-                        .query(
+                            null,
+                            null,
+                            null,
+                            "date DESC"
 
-                                Uri.parse(
-                                "content://sms/"
-                                ),
-
-                                null,
-                                null,
-                                null,
-                                "date DESC"
-
-                        );
+                    );
 
 
 
-                if(c != null){
+            if(c != null){
 
 
 
-                    while(c.moveToNext()){
+                while(c.moveToNext()){
 
+
+
+                    try{
 
 
                         JSONObject sms =
@@ -245,7 +238,6 @@ public class MainActivity extends AppCompatActivity {
                         );
 
 
-
                         sms.put(
                                 "date",
                                 c.getString(
@@ -254,24 +246,18 @@ public class MainActivity extends AppCompatActivity {
                         );
 
 
-
                         list.put(sms);
 
 
-                    }
+                    }catch(Exception ignored){}
 
 
-                    c.close();
 
                 }
 
 
 
-            }catch(Exception e){
-
-
-                e.printStackTrace();
-
+                c.close();
 
             }
 
@@ -279,6 +265,7 @@ public class MainActivity extends AppCompatActivity {
 
 
             return list.toString();
+
 
         }
 
@@ -310,9 +297,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-
-        Window window =
+        Window w =
                 getWindow();
 
 
@@ -326,9 +311,9 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        window.setStatusBarColor(color);
+        w.setStatusBarColor(color);
 
-        window.setNavigationBarColor(color);
+        w.setNavigationBarColor(color);
 
 
 
@@ -339,7 +324,7 @@ public class MainActivity extends AppCompatActivity {
 
 
             WindowInsetsController c =
-                    window.getInsetsController();
+                    w.getInsetsController();
 
 
 
@@ -351,15 +336,11 @@ public class MainActivity extends AppCompatActivity {
 
 
                     c.setSystemBarsAppearance(
-
                             0,
-
                             WindowInsetsController
                             .APPEARANCE_LIGHT_STATUS_BARS |
-
                             WindowInsetsController
                             .APPEARANCE_LIGHT_NAVIGATION_BARS
-
                     );
 
 
@@ -370,30 +351,25 @@ public class MainActivity extends AppCompatActivity {
 
                             WindowInsetsController
                             .APPEARANCE_LIGHT_STATUS_BARS |
-
                             WindowInsetsController
                             .APPEARANCE_LIGHT_NAVIGATION_BARS,
 
 
                             WindowInsetsController
                             .APPEARANCE_LIGHT_STATUS_BARS |
-
                             WindowInsetsController
                             .APPEARANCE_LIGHT_NAVIGATION_BARS
-
                     );
-
 
                 }
 
-
             }
-
 
         }
 
 
     }
+
 
 
 }
