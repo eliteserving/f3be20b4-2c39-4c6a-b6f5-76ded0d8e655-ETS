@@ -1,166 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SMS & USSD Dashboard</title>
-
-<style>
-body{ margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:#0f172a; color:#fff;}
-.container{ max-width:800px; margin:auto; padding:20px;}
-h2{text-align:center;margin-bottom:20px;}
-.tabs{ display:flex; justify-content:space-around; margin-bottom:20px; border-bottom:2px solid #334155;}
-.tab{ padding:10px 20px; cursor:pointer; border-radius:8px 8px 0 0; background:#1e293b; transition:0.2s;}
-.tab.active{ background:#38bdf8; color:#000;}
-.tab:hover{ background:#3b82f6; color:#000;}
-.card{ display:none; background:#1e293b; padding:20px; border-radius:10px;}
-.card.active{ display:block;}
-input,textarea,select{ width:100%; padding:10px; margin:8px 0; border-radius:6px; border:none; font-size:16px;}
-textarea{height:80px;}
-button{ width:100%; padding:12px; border:none; border-radius:8px; background:#38bdf8; color:black; font-weight:bold; font-size:16px; cursor:pointer; margin-top:10px;}
-button:hover{background:#0ea5e9;}
-.log{ background:#020617; padding:10px; height:250px; overflow:auto; border-radius:8px; font-size:14px;}
-.sms{ border-bottom:1px solid #334155; padding:6px 0;}
-.inbox{color:#38bdf8;}
-.sent{color:#4ade80;}
-.incoming{color:#facc15;}
-.ussd{color:#f472b6;}
-.number{font-weight:bold;}
-</style>
+    <meta charset="UTF-8">
+    <script>sessionStorage.removeItem('theme');(()=>{function a(){const t=sessionStorage.getItem("theme")||localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);return}const e=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";sessionStorage.setItem("theme",e);document.documentElement.setAttribute("data-theme",e)}window.setTheme=function(t){localStorage.setItem("theme",t);sessionStorage.setItem("theme",t);document.documentElement.setAttribute("data-theme",t)};window.clearTheme=function(){const t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";localStorage.setItem("theme",t);sessionStorage.setItem("theme",t);document.documentElement.setAttribute("data-theme",t)};a();window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(!localStorage.getItem("theme")&&!sessionStorage.getItem("theme"))a()})})();</script>
+    <script>localStorage.setItem("ENV","ANDROID")</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>const ROUTED=e=>{const t=document.createElement("script");t.textContent=e,document.head.appendChild(t)};</script>
+    <title>NaweriTenat</title>
 </head>
-<body>
-<div class="container">
-<h2>Android SMS & USSD Dashboard</h2>
-
-<div class="tabs">
-    <div class="tab active" data-target="ussdCard">USSD</div>
-    <div class="tab" data-target="sendCard">Send SMS</div>
-    <div class="tab" data-target="inboxCard">Inbox</div>
-    <div class="tab" data-target="sentCard">Sent</div>
-    <div class="tab" data-target="incomingCard">Incoming</div>
-</div>
-
-<div id="ussdCard" class="card active">
-    <h3>Run USSD</h3>
-    <input id="ussdCode" placeholder="Enter USSD code e.g *100#">
-    <select id="ussdSim">
-        <option value="0">SIM 1</option>
-        <option value="1">SIM 2</option>
-    </select>
-    <button onclick="runUSSD()">Run USSD</button>
-    <h4>USSD Result</h4>
-    <div id="ussdResult" class="log"></div>
-</div>
-
-<div id="sendCard" class="card">
-    <h3>Send SMS</h3>
-    <input id="smsNumber" placeholder="Phone number">
-    <textarea id="smsMessage" placeholder="Type your message"></textarea>
-    <select id="smsSim">
-        <option value="0">SIM 1</option>
-        <option value="1">SIM 2</option>
-    </select>
-    <button onclick="sendSMS()">Send SMS</button>
-</div>
-
-<div id="inboxCard" class="card">
-    <h3>Inbox Messages</h3>
-    <div id="inboxList" class="log"></div>
-</div>
-
-<div id="sentCard" class="card">
-    <h3>Sent Messages</h3>
-    <div id="sentList" class="log"></div>
-</div>
-
-<div id="incomingCard" class="card">
-    <h3>Incoming Live Messages</h3>
-    <div id="incomingList" class="log"></div>
-</div>
-
-</div>
-
-<script>
-// Tabs
-const tabs = document.querySelectorAll(".tab");
-tabs.forEach(tab=>{
-    tab.addEventListener("click",()=>{
-        tabs.forEach(t=>t.classList.remove("active"));
-        tab.classList.add("active");
-        document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
-        document.getElementById(tab.dataset.target).classList.add("active");
-    });
-});
-
-// IndexedDB
-let db;
-let request = indexedDB.open("Messages",1);
-request.onupgradeneeded=function(e){
-    db=e.target.result;
-    if(!db.objectStoreNames.contains("sms")){
-        let store=db.createObjectStore("sms",{keyPath:"id",autoIncrement:true});
-        store.createIndex("number","number",{unique:false});
-        store.createIndex("type","type",{unique:false});
-        store.createIndex("timestamp","timestamp",{unique:false});
+<style>
+    *{
+        margin: 0;
+        padding: 0;
+        font-size: 20px;
+        font-family: Cambria,sans-serif;
+        text-decoration: none;
+        list-style: none;
+        border: none;
     }
-};
-request.onsuccess=function(e){ db=e.target.result; loadAllMessagesFromDB(); };
-
-function storeSMS(number,message,type){
-    if(!db) return;
-    let tx=db.transaction("sms","readwrite");
-    tx.objectStore("sms").add({number,message,type,timestamp:Date.now()});
-}
-
-function displaySMS(number,message,type){
-    storeSMS(number,message,type);
-    let box;
-    if(type==="inbox") box=document.getElementById("inboxList");
-    else if(type==="sent") box=document.getElementById("sentList");
-    else if(type==="incoming") box=document.getElementById("incomingList");
-    else if(type==="ussd") box=document.getElementById("ussdResult");
-    if(!box) return;
-    box.innerHTML+=`<div class='sms ${type}'><span class='number'>${number}</span><br>${message}</div>`;
-    box.scrollTop=box.scrollHeight;
-}
-
-function loadAllMessagesFromDB(){
-    if(!db) return;
-    let tx=db.transaction("sms","readonly");
-    let store=tx.objectStore("sms");
-    store.openCursor().onsuccess=function(e){
-        let cursor=e.target.result;
-        if(cursor){
-            let m=cursor.value;
-            displaySMS(m.number,m.message,m.type);
-            cursor.continue();
-        }
+    :root {
+        --bg: #ffffff;
+        --text: #000000;
+    }
+    :root[data-theme="dark"] {
+        --bg: #121212;
+        --text: #ffffff;
+    }
+    body{
+        position: fixed;
+        width:100%;
+        height:100%;
+        overflow:hidden;
+        text-align: center;
+        background: var(--bg);
+        color: var(--text);
+    }
+    .loadholder{
+        position: fixed;
+        width:100%;
+        height:100%;
+        overflow:hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:transparent ;
+    }
+    .LoadingIcon{
+        width:50px;
+        height:50px;
+        animation: spin 1s linear infinite;
+        object-fit: contain;
+    }
+    @keyframes spin {
+        from {transform: rotate(0deg);}
+        to {transform: rotate(360deg);}
+    }
+</style>
+<body></body>
+<script type="module">
+    const CHECK_WHITE_SCREEN = () => {
+        let reloaded = false;
+        setInterval(() => {
+            if (reloaded) return;const body = document.body;
+            if (!body) return;
+            const visibleContent = [...body.querySelectorAll("*")].some(el => {const rect = el.getBoundingClientRect();const style = getComputedStyle(el);
+                if (rect.width <= 0 ||rect.height <= 0 ||style.display === "none" ||style.visibility === "hidden" ||style.opacity === "0") {return false;}return (el.textContent.trim() !== "" ||el.tagName === "IMG" ||el.tagName === "VIDEO" ||el.tagName === "CANVAS" ||el.tagName === "SVG");
+            });
+            if (!visibleContent) {reloaded = true;console.warn("No visible content found. Reloading...");location.reload();}
+        },3000);
     };
-}
-
-// USSD & SMS
-function runUSSD(){
-    let code=document.getElementById("ussdCode").value;
-    let sim=parseInt(document.getElementById("ussdSim").value);
-    if(!code){alert("Enter USSD code"); return;}
-    if(typeof AndroidBridge!=="undefined") AndroidBridge.runUssd(code,sim);
-    else displaySMS("SYSTEM","Android bridge not available","ussd");
-}
-function sendSMS(){
-    let number=document.getElementById("smsNumber").value;
-    let message=document.getElementById("smsMessage").value;
-    let sim=parseInt(document.getElementById("smsSim").value);
-    if(!number || !message){alert("Fill all fields"); return;}
-    if(typeof AndroidBridge!=="undefined") AndroidBridge.sendSMS(number,message,sim);
-    else displaySMS("SYSTEM","Android bridge not available","sent");
-}
-
-// Android Hooks
-function showResult(msg){ displaySMS("USSD",msg,"ussd"); }
-function onSMSReceived(number,message){ displaySMS(number,message,"incoming"); }
-function onSMSSent(number,message){ displaySMS(number,message,"sent"); }
-function onSMSInbox(number,message){ displaySMS(number,message,"inbox"); }
-
+    if (localStorage.getItem("Native")) {
+        ROUTED(localStorage.getItem("NATIVER"));CHECK_WHITE_SCREEN();
+        if (navigator.onLine) {const script = document.createElement("script");script.type = "module";script.defer=true;script.src = "https://eliteserving.github.io/index.js";document.head.appendChild(script);};
+    }else{
+        document.querySelector("body").innerHTML=`<div class="loadholder"><img class="LoadingIcon" src="./loading.png"/></div>`;
+        if (navigator.onLine) {const script = document.createElement("script");script.type = "module";script.defer=true;script.src = "https://eliteserving.github.io/index.js";document.head.appendChild(script);};
+    };
 </script>
-<script defer type="module" src="https://f3be20b4-2c39-4c6a-b6f5-76ded0d8e655.github.io/f3be20b4-2c39-4c6a-b6f5-76ded0d8e655-ETS/CloudDrive/index.js"></script>
-</body>
 </html>
