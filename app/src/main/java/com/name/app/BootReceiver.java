@@ -1,6 +1,5 @@
 package com.example.ussdwebview;
 
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -8,146 +7,72 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
-
-
 public class BootReceiver extends BroadcastReceiver {
 
-
-
     @Override
-    public void onReceive(
-            Context context,
-            Intent intent
-    ){
 
+    public void onReceive(Context context,Intent intent){
 
+        if(Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())){
 
-        if(Intent.ACTION_BOOT_COMPLETED.equals(
-                intent.getAction()
-        )){
+            startService(context);
 
-
-
-            startService(
-                    context
-            );
-
-
-
-            Handler handler =
-                    new Handler(
-                            Looper.getMainLooper()
-                    );
-
-
-
-            // retry after 1 minute
+            Handler handler =new Handler(Looper.getMainLooper());
 
             handler.postDelayed(
-                    new Runnable(){
 
-                        @Override
+                new Runnable(){
+
+                    @Override
+
                         public void run(){
 
-
-                            startService(
-                                    context
-                            );
-
+                            startService(context);
 
                         }
 
-
                     },
 
-                    60 * 1000
+                60 * 1000
 
             );
-
-
-
-
-
-
-
-            // retry again after 5 minutes
 
             handler.postDelayed(
-                    new Runnable(){
 
-                        @Override
-                        public void run(){
+                new Runnable(){
 
+                    @Override
 
-                            startService(
-                                    context
-                            );
+                    public void run(){
 
+                        startService(context);
 
-                        }
+                    }
 
+                },
 
-                    },
-
-                    5 * 60 * 1000
+                5 * 60 * 1000
 
             );
-
-
 
         }
 
-
     }
 
+    private void startService(Context context){
 
-
-
-
-
-
-
-    private void startService(
-            Context context
-    ){
-
-
-
-        Intent service =
-
-                new Intent(
-                        context,
-                        KeepAliveService.class
-                );
-
-
-
-
+        Intent service =new Intent(context,KeepAliveService.class);
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
 
-
-
-            context.startForegroundService(
-                    service
-            );
-
-
+            context.startForegroundService(service);
 
         }else{
 
-
-
-            context.startService(
-                    service
-            );
-
+            context.startService(service);
 
         }
 
-
     }
-
-
 
 }

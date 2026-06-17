@@ -1,179 +1,78 @@
 package com.example.ussdwebview;
 
-
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
-
-
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
-
-
 public class KeepAliveService extends Service {
 
+    private static final String CHANNEL_ID ="Fiskon";
 
+    @Override
 
-private static final String CHANNEL_ID =
-        "Fiskon";
+    public void onCreate(){
 
+        super.onCreate();
 
+        createChannel();
 
+        Intent open =new Intent(this,MainActivity.class);
 
-@Override
-public void onCreate(){
+        open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
+        PendingIntent click =PendingIntent.getActivity(this,0,open,PendingIntent.FLAG_UPDATE_CURRENT |PendingIntent.FLAG_IMMUTABLE);
 
-super.onCreate();
+        Notification notification =new NotificationCompat.Builder(this,CHANNEL_ID)
 
+        .setContentTitle("Fiskon Running")
 
+        .setContentText("SMS monitoring active")
 
-createChannel();
+        .setSmallIcon(R.drawable.app_icon)
 
+        .setOngoing(true)
 
+        .setContentIntent(click)
 
-Intent open =
-        new Intent(
-                this,
-                MainActivity.class
-        );
+        .build();
 
+        startForeground(1,notification);
 
-open.setFlags(
-        Intent.FLAG_ACTIVITY_NEW_TASK |
-        Intent.FLAG_ACTIVITY_CLEAR_TOP
-);
+    }
 
+    private void createChannel(){
 
+        if(Build.VERSION.SDK_INT >= 26){
 
-PendingIntent click =
-        PendingIntent.getActivity(
+            NotificationChannel c =new NotificationChannel(CHANNEL_ID,"Fiskon",NotificationManager.IMPORTANCE_LOW);
 
-                this,
+            getSystemService(NotificationManager.class)
 
-                0,
+            .createNotificationChannel(c);
 
-                open,
+        }
 
-                PendingIntent.FLAG_UPDATE_CURRENT |
-                PendingIntent.FLAG_IMMUTABLE
+    }
 
-        );
+    @Override
 
+    public int onStartCommand(Intent i,int flags,int id){
 
+        return START_STICKY;
 
+    }
 
+    @Nullable
 
-Notification notification =
-        new NotificationCompat.Builder(
-                this,
-                CHANNEL_ID
-        )
+    @Override
 
-
-.setContentTitle(
-        "Fiskon Running"
-)
-
-.setContentText(
-        "SMS monitoring active"
-)
-
-.setSmallIcon(
-        R.drawable.app_icon
-)
-
-.setOngoing(true)
-
-.setContentIntent(click)
-
-.build();
-
-
-
-
-startForeground(
-        1,
-        notification
-);
-
-
-}
-
-
-
-
-
-
-
-
-private void createChannel(){
-
-
-if(Build.VERSION.SDK_INT >= 26){
-
-
-
-NotificationChannel c =
-new NotificationChannel(
-
-CHANNEL_ID,
-
-"Fiskon",
-
-NotificationManager.IMPORTANCE_LOW
-
-);
-
-
-
-getSystemService(
-NotificationManager.class
-)
-.createNotificationChannel(c);
-
-
-}
-
-
-}
-
-
-
-
-
-
-
-
-@Override
-public int onStartCommand(
-        Intent i,
-        int flags,
-        int id
-){
-
-return START_STICKY;
-
-}
-
-
-
-
-
-
-@Nullable
-@Override
-public IBinder onBind(Intent i){
-
-return null;
-
-}
+    public IBinder onBind(Intent i){return null;}
 
 }
