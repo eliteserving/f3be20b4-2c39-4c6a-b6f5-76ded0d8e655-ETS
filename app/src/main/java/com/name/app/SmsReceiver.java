@@ -15,22 +15,23 @@ public class SmsReceiver extends BroadcastReceiver {
 
 @Override
 public void onReceive(
-Context context,
-Intent intent
+        Context context,
+        Intent intent
 ){
 
 
 
-Bundle b =
-intent.getExtras();
+Bundle data =
+        intent.getExtras();
 
 
 
-if(b != null){
+if(data != null){
+
 
 
 Object[] pdus =
-(Object[]) b.get("pdus");
+        (Object[]) data.get("pdus");
 
 
 
@@ -38,44 +39,46 @@ if(pdus != null){
 
 
 
-for(Object p:pdus){
+for(Object p : pdus){
 
 
 
 SmsMessage sms =
 SmsMessage.createFromPdu(
-(byte[])p
+        (byte[])p
 );
 
 
 
 String sender =
-sms.getOriginatingAddress();
+        sms.getOriginatingAddress();
 
 
 
-String msg =
-sms.getMessageBody();
+String message =
+        sms.getMessageBody();
+
 
 
 
 android.util.Log.d(
-"Fiskon SMS",
-sender+" "+msg
+
+        "Fiskon SMS",
+
+        sender + " : " + message
+
 );
 
 
-
-}
-
 }
 
 
 }
 
 
-
 }
 
+
+}
 
 }

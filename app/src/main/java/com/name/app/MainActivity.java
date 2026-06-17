@@ -31,7 +31,7 @@ import androidx.core.content.ContextCompat;
 public class MainActivity extends AppCompatActivity {
 
 
-    WebView webView;
+    private WebView webView;
 
 
     private static final int SMS_PERMISSION = 200;
@@ -58,9 +58,9 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
         webView =
                 findViewById(R.id.webview);
-
 
 
 
@@ -73,8 +73,6 @@ public class MainActivity extends AppCompatActivity {
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
 
 
 
@@ -94,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        requestSms();
+        requestSmsPermission();
 
 
 
@@ -102,8 +100,8 @@ public class MainActivity extends AppCompatActivity {
                 "file:///android_asset/index.html"
         );
 
-    }
 
+    }
 
 
 
@@ -115,7 +113,6 @@ public class MainActivity extends AppCompatActivity {
     private void startKeepAlive(){
 
 
-
         Intent i =
                 new Intent(
                         this,
@@ -124,18 +121,16 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+        if(Build.VERSION.SDK_INT >= 26){
 
 
             startForegroundService(i);
-
 
 
         }else{
 
 
             startService(i);
-
 
         }
 
@@ -150,21 +145,14 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-
-    private void requestSms(){
-
+    private void requestSmsPermission(){
 
 
         if(ContextCompat.checkSelfPermission(
-
                 this,
-
                 Manifest.permission.READ_SMS
-
         )
         != PackageManager.PERMISSION_GRANTED){
-
 
 
             ActivityCompat.requestPermissions(
@@ -182,7 +170,6 @@ public class MainActivity extends AppCompatActivity {
 
             );
 
-
         }
 
 
@@ -196,26 +183,19 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-
-
     public class SmsBridge {
-
 
 
         @JavascriptInterface
         public String getAllSms(){
 
 
-
-            JSONArray array =
+            JSONArray list =
                     new JSONArray();
 
 
 
-
             try{
-
 
 
                 Cursor c =
@@ -232,7 +212,6 @@ public class MainActivity extends AppCompatActivity {
                                 "date DESC"
 
                         );
-
 
 
 
@@ -276,16 +255,13 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-                        array.put(sms);
+                        list.put(sms);
 
 
                     }
 
 
-
-
                     c.close();
-
 
                 }
 
@@ -302,18 +278,12 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-            return array.toString();
-
+            return list.toString();
 
         }
 
 
     }
-
-
-
-
 
 
 
@@ -329,7 +299,6 @@ public class MainActivity extends AppCompatActivity {
 
         boolean dark =
 
-
         (getResources()
         .getConfiguration()
         .uiMode
@@ -337,7 +306,6 @@ public class MainActivity extends AppCompatActivity {
         Configuration.UI_MODE_NIGHT_MASK)
 
         ==
-
         Configuration.UI_MODE_NIGHT_YES;
 
 
@@ -349,46 +317,18 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+        int color =
+                dark
+                ?
+                Color.parseColor("#121212")
+                :
+                Color.WHITE;
 
 
-        int color;
-
-
-
-        if(dark){
-
-
-            color =
-            Color.parseColor("#121212");
-
-
-
-        }else{
-
-
-            color =
-            Color.WHITE;
-
-
-        }
-
-
-
-
-
-
-        // status bar
 
         window.setStatusBarColor(color);
 
-
-
-        // navigation bar
-
         window.setNavigationBarColor(color);
-
-
-
 
 
 
@@ -398,20 +338,19 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-            WindowInsetsController controller =
+            WindowInsetsController c =
                     window.getInsetsController();
 
 
 
-            if(controller != null){
+            if(c != null){
 
 
 
                 if(dark){
 
 
-
-                    controller.setSystemBarsAppearance(
+                    c.setSystemBarsAppearance(
 
                             0,
 
@@ -424,12 +363,10 @@ public class MainActivity extends AppCompatActivity {
                     );
 
 
-
                 }else{
 
 
-
-                    controller.setSystemBarsAppearance(
+                    c.setSystemBarsAppearance(
 
                             WindowInsetsController
                             .APPEARANCE_LIGHT_STATUS_BARS |
@@ -457,23 +394,6 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
-
-
-
-
-
-    @Override
-    public void onConfigurationChanged(
-            Configuration config
-    ){
-
-        super.onConfigurationChanged(config);
-
-
-        setupSystemTheme();
-
-    }
-
 
 
 }
