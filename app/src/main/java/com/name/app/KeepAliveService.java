@@ -1,15 +1,10 @@
 package com.example.ussdwebview;
 
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.Service;
 
-import android.content.Intent;
-import android.os.Build;
-import android.os.IBinder;
-
+import android.app.*;
+import android.content.*;
+import android.os.*;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -20,187 +15,151 @@ public class KeepAliveService extends Service {
 
 
 
-    private static final String CHANNEL_ID = "Fiskon";
+private static final String CHANNEL =
+        "Fiskon";
 
 
 
-    @Override
-    public void onCreate() {
 
-        super.onCreate();
+@Override
+public void onCreate(){
 
 
-        createNotificationChannel();
+super.onCreate();
 
 
 
-        Notification notification =
-                new NotificationCompat.Builder(
-                        this,
-                        CHANNEL_ID
-                )
+createChannel();
 
-                .setContentTitle(
-                        "Fiskon Is Running"
-                )
 
-                .setContentText(
-                        "App Monitoring Active"
-                )
 
-                .setSmallIcon(
-                        R.drawable.app_icon
-                )
+Intent open =
+new Intent(
+        this,
+        MainActivity.class
+);
 
-                .setOngoing(true)
 
-                .setPriority(
-                        NotificationCompat.PRIORITY_LOW
-                )
 
-                .build();
+PendingIntent click =
+PendingIntent.getActivity(
 
+        this,
+        0,
+        open,
 
+        PendingIntent.FLAG_IMMUTABLE |
+        PendingIntent.FLAG_UPDATE_CURRENT
 
-        startForeground(
-                1,
-                notification
-        );
+);
 
 
-    }
 
+Notification notification =
 
+new NotificationCompat.Builder(
+        this,
+        CHANNEL
+)
 
+.setContentTitle(
+        "Fiskon Running"
+)
 
+.setContentText(
+        "SMS monitoring active"
+)
 
+.setSmallIcon(
+        R.drawable.app_icon
+)
 
+.setOngoing(true)
 
-    private void createNotificationChannel(){
+.setContentIntent(click)
 
+.build();
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
 
 
+startForeground(
+        1,
+        notification
+);
 
-            NotificationChannel channel =
-                    new NotificationChannel(
 
-                            CHANNEL_ID,
 
-                            "Fiskon Background Service",
+}
 
-                            NotificationManager.IMPORTANCE_LOW
 
-                    );
 
 
 
-            channel.setDescription(
-                    "Keeps Fiskon running"
-            );
 
 
+private void createChannel(){
 
-            NotificationManager manager =
-                    getSystemService(
-                            NotificationManager.class
-                    );
 
 
+if(Build.VERSION.SDK_INT >= 26){
 
-            if(manager != null){
 
-                manager.createNotificationChannel(
-                        channel
-                );
+NotificationChannel c =
+new NotificationChannel(
 
-            }
+CHANNEL,
 
-        }
+"Fiskon Service",
 
+NotificationManager.IMPORTANCE_LOW
 
-    }
+);
 
 
 
+getSystemService(
+NotificationManager.class
+)
+.createNotificationChannel(c);
 
 
 
+}
 
 
-    @Override
-    public int onStartCommand(
-            Intent intent,
-            int flags,
-            int startId
-    ){
+}
 
 
-        return START_STICKY;
 
-    }
 
 
 
+@Override
+public int onStartCommand(
+Intent i,
+int f,
+int id
+){
 
 
+return START_STICKY;
 
 
+}
 
 
-    @Override
-    public void onDestroy(){
 
 
-        super.onDestroy();
 
 
 
-        // restart service if Android kills it
+@Nullable
+@Override
+public IBinder onBind(Intent i){
 
-        Intent restartService =
-                new Intent(
-                        getApplicationContext(),
-                        KeepAliveService.class
-                );
+return null;
 
-
-
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-
-
-            startForegroundService(
-                    restartService
-            );
-
-
-        }else{
-
-
-            startService(
-                    restartService
-            );
-
-        }
-
-
-    }
-
-
-
-
-
-
-
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent){
-
-        return null;
-
-    }
-
+}
 
 
 }
