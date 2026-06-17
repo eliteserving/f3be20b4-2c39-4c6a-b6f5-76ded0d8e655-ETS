@@ -1,18 +1,13 @@
 package com.example.ussdwebview;
 
 import android.Manifest;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.net.Uri;
+import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Bundle;
-import android.telephony.SmsMessage;
 import android.view.View;
 import android.view.Window;
 import android.webkit.JavascriptInterface;
@@ -20,35 +15,41 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+
 public class MainActivity extends AppCompatActivity {
 
-    private static final int SMS_PERMISSION_REQUEST = 100;
 
     private WebView webView;
-    private SmsBridge smsBridge;
 
-    public static MainActivity instance;
+    private static final int SMS_PERMISSION = 200;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
 
-        instance = this;
+        super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
 
+
         setupSystemTheme();
+
 
         webView = findViewById(R.id.webview);
 
-        smsBridge = new SmsBridge();
 
-        WebSettings settings = webView.getSettings();
+        WebSettings settings =
+                webView.getSettings();
+
+
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
@@ -56,45 +57,84 @@ public class MainActivity extends AppCompatActivity {
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
 
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+
+            WebView.setWebContentsDebuggingEnabled(true);
+
+        }
+
+
+
         webView.addJavascriptInterface(
-                smsBridge,
+                new SmsBridge(),
                 "AndroidSMS"
         );
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(true);
-        }
 
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
 
-                boolean isDarkMode =
-                        (getResources().getConfiguration().uiMode
-                                & Configuration.UI_MODE_NIGHT_MASK)
-                                == Configuration.UI_MODE_NIGHT_YES;
+        webView.setWebViewClient(
+                new WebViewClient() {
 
-                String theme = isDarkMode ? "dark" : "light";
+                    @Override
+                    public void onPageFinished(
+                            WebView view,
+                            String url
+                    ) {
 
-                view.evaluateJavascript(
-                        "document.documentElement.setAttribute('data-theme', '" + theme + "')",
-                        null
-                );
-            }
-        });
+                        super.onPageFinished(view,url);
+
+
+                        boolean dark =
+                                (getResources()
+                                .getConfiguration()
+                                .uiMode
+                                &
+                                Configuration.UI_MODE_NIGHT_MASK)
+                                ==
+                                Configuration.UI_MODE_NIGHT_YES;
+
+
+                        String theme =
+                                dark ? "dark" : "light";
+
+
+                        view.evaluateJavascript(
+                                "document.documentElement.setAttribute('data-theme','"
+                                + theme +
+                                "')",
+                                null
+                        );
+
+                    }
+                }
+        );
+
+
 
         requestSmsPermission();
 
-        webView.loadUrl("file:///android_asset/index.html");
+
+        webView.loadUrl(
+                "file:///android_asset/index.html"
+        );
+
     }
 
-    private void requestSmsPermission() {
 
-        if (ContextCompat.checkSelfPermission(
+
+
+
+    private void requestSmsPermission(){
+
+
+        if(ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.READ_SMS
-        ) != PackageManager.PERMISSION_GRANTED) {
+        )
+        != PackageManager.PERMISSION_GRANTED){
+
 
             ActivityCompat.requestPermissions(
                     this,
@@ -102,141 +142,263 @@ public class MainActivity extends AppCompatActivity {
                             Manifest.permission.READ_SMS,
                             Manifest.permission.RECEIVE_SMS
                     },
-                    SMS_PERMISSION_REQUEST
+                    SMS_PERMISSION
             );
+
         }
+
     }
 
-    public void sendSmsToWebView(String message) {
 
-        if (webView == null) return;
 
-        smsBridge.setLatestSms(message);
 
-        String escaped = message
-                .replace("\\", "\\\\")
-                .replace("'", "\\'")
-                .replace("\n", "\\n");
 
-        new Handler(Looper.getMainLooper()).post(() ->
-                webView.evaluateJavascript(
-                        "window.onSmsReceived && window.onSmsReceived('" +
-                                escaped + "')",
-                        null
-                )
-        );
-    }
 
-    public static class SmsBridge {
+    public class SmsBridge {
 
-        private String latestSms = "";
 
         @JavascriptInterface
-        public String getLatestSms() {
-            return latestSms;
-        }
+        public String getAllSms(){
 
-        public void setLatestSms(String sms) {
-            latestSms = sms;
-        }
-    }
 
-    public static class SmsReceiver extends BroadcastReceiver {
+            JSONArray smsList =
+                    new JSONArray();
 
-        @Override
-        public void onReceive(Context context, Intent intent) {
 
-            if (!"android.provider.Telephony.SMS_RECEIVED"
-                    .equals(intent.getAction())) {
-                return;
-            }
+            try {
 
-            Bundle bundle = intent.getExtras();
 
-            if (bundle == null) {
-                return;
-            }
+                Uri uri =
+                        Uri.parse(
+                        "content://sms/"
+                        );
 
-            Object[] pdus = (Object[]) bundle.get("pdus");
 
-            if (pdus == null) {
-                return;
-            }
+                Cursor cursor =
+                        getContentResolver()
+                        .query(
+                                uri,
+                                null,
+                                null,
+                                null,
+                                "date DESC"
+                        );
 
-            for (Object pdu : pdus) {
 
-                SmsMessage sms;
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if(cursor != null){
 
-                    String format = bundle.getString("format");
 
-                    sms = SmsMessage.createFromPdu(
-                            (byte[]) pdu,
-                            format
-                    );
+                    int id =
+                    cursor.getColumnIndex("_id");
 
-                } else {
 
-                    sms = SmsMessage.createFromPdu(
-                            (byte[]) pdu
-                    );
+                    int sender =
+                    cursor.getColumnIndex("address");
+
+
+                    int body =
+                    cursor.getColumnIndex("body");
+
+
+                    int date =
+                    cursor.getColumnIndex("date");
+
+
+
+                    while(cursor.moveToNext()){
+
+
+                        JSONObject sms =
+                                new JSONObject();
+
+
+
+                        sms.put(
+                                "id",
+                                cursor.getString(id)
+                        );
+
+
+                        sms.put(
+                                "sender",
+                                cursor.getString(sender)
+                        );
+
+
+                        sms.put(
+                                "message",
+                                cursor.getString(body)
+                        );
+
+
+                        sms.put(
+                                "date",
+                                cursor.getString(date)
+                        );
+
+
+
+                        smsList.put(sms);
+
+                    }
+
+
+                    cursor.close();
+
                 }
 
-                String message = sms.getMessageBody();
 
-                if (instance != null) {
-                    instance.sendSmsToWebView(message);
-                }
+
             }
+            catch(Exception e){
+
+                e.printStackTrace();
+
+            }
+
+
+
+            return smsList.toString();
+
         }
+
     }
 
-    private void setupSystemTheme() {
 
-        boolean isDarkMode =
-                (getResources().getConfiguration().uiMode
-                        & Configuration.UI_MODE_NIGHT_MASK)
-                        == Configuration.UI_MODE_NIGHT_YES;
 
-        Window window = getWindow();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
-            if (isDarkMode) {
+
+
+    private void setupSystemTheme(){
+
+
+        boolean darkMode =
+                (getResources()
+                .getConfiguration()
+                .uiMode
+                &
+                Configuration.UI_MODE_NIGHT_MASK)
+                ==
+                Configuration.UI_MODE_NIGHT_YES;
+
+
+
+        Window window =
+                getWindow();
+
+
+
+        if(Build.VERSION.SDK_INT >=
+                Build.VERSION_CODES.LOLLIPOP){
+
+
+
+            if(darkMode){
+
 
                 window.setStatusBarColor(
                         Color.parseColor("#121212")
                 );
 
+
                 window.setNavigationBarColor(
                         Color.parseColor("#121212")
                 );
 
-            } else {
 
-                window.setStatusBarColor(Color.WHITE);
-                window.setNavigationBarColor(Color.WHITE);
+            }else{
+
+
+                window.setStatusBarColor(
+                        Color.WHITE
+                );
+
+
+                window.setNavigationBarColor(
+                        Color.WHITE
+                );
+
             }
+
         }
+
+
+
+
+        if(Build.VERSION.SDK_INT >=
+                Build.VERSION_CODES.R){
+
+
+            if(window.getInsetsController()!=null){
+
+
+                if(!darkMode){
+
+
+                    window.getInsetsController()
+                    .setSystemBarsAppearance(
+                            android.view.WindowInsetsController
+                            .APPEARANCE_LIGHT_STATUS_BARS |
+                            android.view.WindowInsetsController
+                            .APPEARANCE_LIGHT_NAVIGATION_BARS,
+
+                            android.view.WindowInsetsController
+                            .APPEARANCE_LIGHT_STATUS_BARS |
+                            android.view.WindowInsetsController
+                            .APPEARANCE_LIGHT_NAVIGATION_BARS
+                    );
+
+                }
+
+            }
+
+        }
+
     }
+
+
+
+
+
+
 
     @Override
     public void onConfigurationChanged(
-            @NonNull Configuration newConfig
-    ) {
-        super.onConfigurationChanged(newConfig);
+            @NonNull Configuration config
+    ){
+
+        super.onConfigurationChanged(config);
 
         setupSystemTheme();
+
     }
+
+
+
+
+
+
 
     @Override
-    public void onBackPressed() {
+    public void onBackPressed(){
 
-        if (webView != null && webView.canGoBack()) {
+
+        if(webView != null &&
+                webView.canGoBack()){
+
+
             webView.goBack();
-        } else {
+
+
+        }else{
+
+
             super.onBackPressed();
+
         }
+
     }
+
 }
