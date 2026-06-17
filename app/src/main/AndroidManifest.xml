@@ -1,28 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-permission android:name="android.permission.READ_SMS" />
 
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
 
-
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-
-    <!-- Android 13+ notification -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-
-    <!-- Start service after phone restart -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-
-
-
     <application
-
 
         android:allowBackup="true"
 
@@ -36,12 +26,6 @@
 
         android:usesCleartextTraffic="true">
 
-
-
-
-
-
-
         <activity
 
             android:name=".MainActivity"
@@ -50,30 +34,15 @@
 
             android:configChanges="uiMode|screenSize|orientation">
 
-
             <intent-filter>
-
 
                 <action android:name="android.intent.action.MAIN" />
 
-
                 <category android:name="android.intent.category.LAUNCHER" />
-
 
             </intent-filter>
 
-
         </activity>
-
-
-
-
-
-
-
-
-
-        <!-- SMS background listener -->
 
         <receiver
 
@@ -83,54 +52,28 @@
 
             android:exported="true">
 
-
             <intent-filter>
-
 
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
 
-
             </intent-filter>
 
-
         </receiver>
-
-
-
-
-
-
-
-
-
-        <!-- Restart foreground service after reboot -->
 
         <receiver
             android:name=".BootReceiver"
-            android:exported="true"
-            android:directBootAware="true">
+            android:enabled="true"
+            android:exported="true">
 
             <intent-filter>
 
-            <action android:name="android.intent.action.BOOT_COMPLETED"/>
-
-            <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
 
             </intent-filter>
 
         </receiver>
 
-
-
-
-
-
-
-
-        <!-- Foreground keep alive service -->
-
         <service
-
 
             android:name=".KeepAliveService"
 
@@ -140,13 +83,10 @@
 
             android:stopWithTask="false"
 
-            android:foregroundServiceType="dataSync" />
-
-
-
-
+            android:foregroundServiceType="dataSync"
+            
+        />
 
     </application>
-
 
 </manifest>
